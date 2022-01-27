@@ -6,6 +6,10 @@ const UsuarioSchema = Schema({
         type: String,
         requiredd: true
     },
+    rol: {
+        type: String,
+        required: true
+    },
     email: {
         type: String,
         required: true,
