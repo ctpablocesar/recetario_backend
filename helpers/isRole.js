@@ -8,3 +8,7 @@ const isRole = (value) => {
         return false;
     }
 }
+
+module.exports = {
+    isRole
+}

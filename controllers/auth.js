@@ -5,7 +5,9 @@ const { generarJWT } = require('../helpers/jwt');
 
 const crearUsuario = async (req, res = response) => {
 
-    const { email, password } = req.body;
+    const { email, password, rol } = req.body;
+
+    if(rol === 'user') {
 
     try {
         let usuario = await Usuario.findOne({ email: email });
@@ -39,6 +41,12 @@ const crearUsuario = async (req, res = response) => {
             msg: 'Por favor hable con el admin'
         })
     }
+}else{
+    res.status(403).json({
+        ok: false,
+        msg: 'No tienes permisos para crear usuarios'
+    })
+}
 
 };
 
@@ -69,11 +77,12 @@ const loginUsuario = async (req, res = response) => {
 
         // generar nuestro JWT
         const token = await generarJWT(usuario.id, usuario.name);
-
+        console.log(usuario);
         res.json({
             ok: true,
             uid: usuario.id,
             name: usuario.name,
+            rol: usuario.rol,
             token
         })
 
@@ -86,7 +95,7 @@ const loginUsuario = async (req, res = response) => {
 
 };
 // TODO: no sirve revalidar token
-const revalidarToken = async(req, res = response) => {
+const revalidarToken = async (req, res = response) => {
 
     const { uid, name } = req;
 
@@ -101,8 +110,48 @@ const revalidarToken = async(req, res = response) => {
 
 };
 
+const crearAdmin = async (req, res = response) => {
+
+    const uid = req.params.uid;
+
+    const user = await Usuario.findById(uid);
+
+    if (!!user) {
+        if (user.rol === 'admin') {
+
+            try {
+
+                const usuario = new Usuario(req.body);
+
+                usuario.role = 'admin';
+
+                await usuario.save();
+
+                res.json({
+                    ok: true,
+                    usuario
+                })
+
+            } catch (error) {
+                res.status(500).json({
+                    ok: false,
+                    msg: 'Por favor hable con el admin'
+                })
+            }
+
+        }
+    } else {
+        res.status(403).json({
+            ok: false,
+            msg: 'No tienes permisos para crear un administrador'
+        })
+    }
+
+};
+
 module.exports = {
     crearUsuario,
     loginUsuario,
-    revalidarToken
+    revalidarToken,
+    crearAdmin
 }
