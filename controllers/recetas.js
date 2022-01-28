@@ -42,7 +42,7 @@ const actualizarReceta = async (req, res = response) => {
     const user = await Usuario.findById(uid);
 
     if (user.role === 'admin') {
-        
+
         try {
 
             const receta = await Receta.findById(recetaId);
@@ -72,41 +72,41 @@ const actualizarReceta = async (req, res = response) => {
                 msg: 'Por favor, hable con el administrador'
             })
         }
-    }else {
-        
-        try{
+    } else {
+
+        try {
 
             const receta = await Receta.findById(recetaId);
 
             if (!receta) {
-                if(receta.uid === uid){
+                if (receta.uid === uid) {
 
                     const nuevaReceta = {
                         ...req.body,
                         'fecha': (Date.now())
                     }
-        
+
                     const RecetaActualizada = await Receta.findByIdAndUpdate(recetaId, nuevaReceta, { new: true });
-        
+
                     res.json({
                         ok: true,
                         RecetaActualizada
                     })
 
-                }else{
+                } else {
                     return res.status(403).json({
                         ok: false,
                         msg: 'No tienes los permisos para modificar esta receta'
                     })
                 }
-            }else{
+            } else {
                 return res.status(404).json({
                     ok: false,
                     msg: 'Receta no existente'
                 })
             }
 
-        }catch{
+        } catch {
 
             res.status(500).json({
                 ok: false,
@@ -124,27 +124,70 @@ const eliminarReceta = async (req, res = response) => {
 
     const recetaId = req.params.id;
 
-    try {
+    const uid = req.params.uid;
 
-        const anuncio = await Receta.findById(recetaId);
+    const user = Usuario.findById(uid);
 
-        if (!anuncio) {
-            return res.status(404).json({
+    if (user.role === 'admin') {
+        try {
+
+            const receta = await Receta.findByIdAndDelete(recetaId);
+
+            if (!receta) {
+                return res.status(404).json({
+                    ok: false,
+                    msg: 'Receta no existente'
+                })
+            }
+
+            res.json({
+                ok: true,
+                msg: 'Receta eliminada'
+            })
+
+        } catch (error) {
+            res.status(500).json({
                 ok: false,
-                msg: 'Anuncio no existe por id'
+                msg: 'Por favor, hable con el administrador'
             })
         }
+    } else {
+        try {
 
-        const recetaEliminada = await Receta.findByIdAndDelete(recetaId);
+            const receta = await Receta.findById(recetaId);
 
-        res.json({ ok: true })
+            if (!receta) {
+                return res.status(404).json({
+                    ok: false,
+                    msg: 'Receta no existente'
+                })
+            }
 
-    } catch (error) {
-        res.status(500).json({
-            ok: false,
-            msg: 'Por favor, hable con el administrador'
-        })
+            if (receta.uid === uid) {
+
+                const recetaEliminada = await Receta.findByIdAndDelete(recetaId);
+
+                res.json({
+                    ok: true,
+                    msg: 'Receta eliminada'
+                })
+
+            } else {
+                return res.status(403).json({
+                    ok: false,
+                    msg: 'No tienes los permisos para eliminar esta receta'
+                })
+            }
+
+        } catch (error) {
+            res.status(500).json({
+                ok: false,
+                msg: 'Por favor, hable con el administrador'
+            })
+        }
     }
+
+
 }
 
 const getRecetasPorUsuario = async (req, res = response) => {
