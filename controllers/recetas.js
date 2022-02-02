@@ -1,6 +1,8 @@
 const { response } = require("express");
 const Receta = require('../models/Receta');
 const Usuario = require('../models/Usuario');
+const moment = require('moment');
+require('moment/locale/es-mx');
 
 const getRecetas = async (req, res = response) => {
 
@@ -37,41 +39,50 @@ const crearReceta = async (req, res = response) => {
 const actualizarReceta = async (req, res = response) => {
 
     const recetaId = req.params.id;
-    const uid = req.params.uid;
-
+    const uid = req.body.uid;
     const user = await Usuario.findById(uid);
 
-    if (user.role === 'admin') {
+    if (!!user) {
 
-        try {
+        if (user.rol === 'admin') {
 
-            const receta = await Receta.findById(recetaId);
+            try {
 
-            if (!receta) {
-                return res.status(404).json({
+                const receta = await Receta.findById(recetaId);
+
+                if (!receta) {
+                    console.log("estoy en la 51");
+                    return res.status(404).json({
+                        ok: false,
+                        msg: 'Receta no existente'
+                    })
+                }
+
+                const nuevaReceta = {
+                    ...req.body,
+                    'fecha': (Date.now())
+                }
+
+                const RecetaActualizada = await Receta.findByIdAndUpdate(recetaId, nuevaReceta, { new: true });
+
+                res.json({
+                    ok: true,
+                    RecetaActualizada
+                })
+
+            } catch (error) {
+                res.status(500).json({
                     ok: false,
-                    msg: 'Receta no existente'
+                    msg: 'Por favor, hable con el administrador'
                 })
             }
-
-            const nuevaReceta = {
-                ...req.body,
-                'fecha': (Date.now())
-            }
-
-            const RecetaActualizada = await Receta.findByIdAndUpdate(recetaId, nuevaReceta, { new: true });
-
-            res.json({
-                ok: true,
-                RecetaActualizada
-            })
-
-        } catch (error) {
-            res.status(500).json({
+        } else {
+            res.status(403).json({
                 ok: false,
-                msg: 'Por favor, hable con el administrador'
+                msg: 'No tienes permisos para realizar esta acción'
             })
         }
+
     } else {
 
         try {
@@ -100,6 +111,7 @@ const actualizarReceta = async (req, res = response) => {
                     })
                 }
             } else {
+                console.log("estoy en la 5104");
                 return res.status(404).json({
                     ok: false,
                     msg: 'Receta no existente'
@@ -126,29 +138,37 @@ const eliminarReceta = async (req, res = response) => {
 
     const uid = req.params.uid;
 
-    const user = Usuario.findById(uid);
+    const user = await Usuario.findById(uid);
 
-    if (user.role === 'admin') {
-        try {
+    if (!!user) {
 
-            const receta = await Receta.findByIdAndDelete(recetaId);
+        if (user.rol === 'admin') {
+            try {
 
-            if (!receta) {
-                return res.status(404).json({
+                const receta = await Receta.findByIdAndDelete(recetaId);
+
+                if (!receta) {
+                    return res.status(404).json({
+                        ok: false,
+                        msg: 'Receta no existente'
+                    })
+                }
+
+                res.json({
+                    ok: true,
+                    msg: 'Receta eliminada'
+                })
+
+            } catch (error) {
+                res.status(500).json({
                     ok: false,
-                    msg: 'Receta no existente'
+                    msg: 'Por favor, hable con el administrador'
                 })
             }
-
-            res.json({
-                ok: true,
-                msg: 'Receta eliminada'
-            })
-
-        } catch (error) {
-            res.status(500).json({
+        } else {
+            res.status(403).json({
                 ok: false,
-                msg: 'Por favor, hable con el administrador'
+                msg: 'No tienes permisos para realizar esta acción'
             })
         }
     } else {
@@ -244,7 +264,30 @@ const getRecetasPorContenido = async (req, res = response) => {
 
     try {
 
-        const recetas = await Receta.find({ procedimiento: { $regex: contenido, $options: 'i' } });
+        const recetas = await Receta.find({ descripcion: { $regex: contenido, $options: 'i' } });
+
+        res.json({
+            ok: true,
+            recetas
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor, hable con el administrador'
+        })
+    }
+
+
+}
+
+const getRecetasPorTitulo = async (req, res = response) => {
+
+    const titulo = req.params.titulo;
+
+    try {
+
+        const recetas = await Receta.find({ titulo: titulo });
 
         res.json({
             ok: true,
@@ -284,6 +327,31 @@ const getRecetasPorTiempo = async (req, res = response) => {
 
 }
 
+const getRecetasPorTipo = async (req, res = response) => {
+
+    const tipo = req.params.tipo;
+
+    try {
+
+        const recetas = await Receta.find({ ocacion: tipo });
+
+        res.json({
+            ok: true,
+            recetas
+        })
+
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            msg: 'Por favor, hable con el administrador'
+        })
+    }
+
+
+}
+
+
+
 module.exports = {
     getRecetas,
     crearReceta,
@@ -292,5 +360,7 @@ module.exports = {
     getRecetasPorUsuario,
     getRecetaPorId,
     getRecetasPorContenido,
-    getRecetasPorTiempo
+    getRecetasPorTiempo,
+    getRecetasPorTitulo,
+    getRecetasPorTipo
 }

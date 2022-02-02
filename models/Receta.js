@@ -22,21 +22,13 @@ const RecetaSchema = Schema({
         type: String,
         required: [true]
     },
-    etiquetas: {
-        type: String,
-        required: [true]
-    },
     status: {
         type: Boolean,
-        required: [true]
+        default: true
     },
     fecha: {
-        type: String,
-        required: [true]
-    },
-    tipo: {
-        type: String,
-        required: [true]
+        type: Date,
+        default: Date.now
     },
     ocacion: {
         type: String,
