@@ -2,12 +2,14 @@ const { Router, response } = require('express');
 const { validarJWT } = require('../middlewares/validar-jwt');
 
 const { validarCampos } = require('../middlewares/validar-campos');
-const { enviarCorreo, enviarCorreoTodos, enviarCorreoVarios } = require('../controllers/correos');
+const { enviarCorreo, enviarCorreoTodos, enviarCorreoVarios, getCorreos } = require('../controllers/correos');
 const { check } = require('express-validator');
 
 const router = Router();
 
 router.use(validarJWT);
+
+router.get('/', getCorreos);
 
 router.post('/',
     [

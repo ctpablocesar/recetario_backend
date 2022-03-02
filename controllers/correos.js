@@ -216,8 +216,59 @@ const enviarCorreoVarios = async (req, res = response) => {
 
 }
 
+const getCorreos = async (req, res = response) => {
+
+    const uid = req.uid;
+
+    const usuario = await Usuario.findById(uid);
+
+    if (usuario) {
+
+        if (usuario.rol == 'admin') {
+
+            try {
+
+                const users = await Usuario.find();
+
+                const correos = [];
+
+                users.forEach(async (user) => {
+                    correos.push(user.email);
+                });
+
+                res.status(200).json({
+                    ok: true,
+                    correos
+                });
+
+            } catch (error) {
+                res.status(400).json({
+                    ok: false,
+                    error
+                });
+            }
+
+        } else {
+            res.status(400).json({
+                ok: false,
+                msg: 'No tienes permisos para realizar esta acción'
+            });
+        }
+    } else {
+        res.status(400).json({
+            ok: false,
+            msg: 'Usuario no encontrado'
+        });
+    }
+
+}
+
+
+
+
 module.exports = {
     enviarCorreo,
     enviarCorreoTodos,
-    enviarCorreoVarios
+    enviarCorreoVarios,
+    getCorreos
 }
