@@ -24,6 +24,7 @@ app.use('/api/recetas', require('./routes/recetas'));
 app.use('/api/contacto', require('./routes/contacto'));
 app.use('/api/galeria', require('./routes/galeria'));
 app.use('/api/correo', require('./routes/correos'));
+app.use('/api/password', require('./routes/password'));
 
 // Escuchar peticiones
 app.listen(process.env.PORT, () => {
