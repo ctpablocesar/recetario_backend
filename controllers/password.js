@@ -1,10 +1,10 @@
 const mjml2html = require('mjml');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const { generarJWT } = require("../helpers/jwt");
 const Usuario = require("../models/Usuario");
-
 
 const ForgotPassword = async (req, res) => {
 
