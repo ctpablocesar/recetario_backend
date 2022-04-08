@@ -68,11 +68,11 @@ const loginUsuario = async (req, res = response) => {
             });
         }
 
-        const {multisesion, fechaFin: fin} = usuario;
+        const { multisesion, fechaFin: fin } = usuario;
         const now = new Date();
 
-        if(multisesion){
-            if(fin > now.getTime()){
+        if (multisesion) {
+            if (fin > now.getTime()) {
                 return res.status(400).json({
                     ok: false,
                     msg: 'El usuario ya inicio sesion',
@@ -89,10 +89,10 @@ const loginUsuario = async (req, res = response) => {
                 msg: 'Correo o contraseña incorrectos'
             });
         }
-        
-        const fechafin = now.getTime() + (60 * 60000* 2);
 
-        const newuser = await Usuario.findOneAndUpdate({_id:usuario._id}, {
+        const fechafin = now.getTime() + (60 * 60000 * 2);
+
+        const newuser = await Usuario.findOneAndUpdate({ _id: usuario._id }, {
             multisesion: true,
             fechaFin: fechafin
         });
@@ -117,14 +117,14 @@ const loginUsuario = async (req, res = response) => {
 };
 
 const cerrarSesion = async (req, res = response) => {
-    
+
     const uid = req.uid;
 
     const user = await Usuario.findById(uid);
 
     if (!!user) {
 
-        const newuser = await Usuario.findOneAndUpdate({_id:uid}, {
+        const newuser = await Usuario.findOneAndUpdate({ _id: uid }, {
             multisesion: false,
         });
 
@@ -140,14 +140,32 @@ const revalidarToken = async (req, res = response) => {
 
     const { uid, name } = req;
 
-    const token = await generarJWT(uid, name);
+    const usuario = await Usuario.findById(uid);
 
-    res.json({
-        ok: true,
-        uid,
-        name,
-        token
-    })
+    if (!!usuario) {
+
+        const token = await generarJWT(uid, name);
+
+        const fechafin = new Date().getTime() + (60 * 60000 * 2);
+
+        const newuser = await Usuario.findOneAndUpdate({ _id: uid }, {
+            multisesion: true,
+            fechaFin: fechafin
+        });
+
+        res.json({
+            ok: true,
+            uid,
+            name,
+            token
+        })
+    }else{
+        res.status(403).json({
+            ok: false,
+            msg: 'Usuario no encontrado'
+        })
+    }
+
 
 };
 
