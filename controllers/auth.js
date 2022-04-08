@@ -7,50 +7,50 @@ const crearUsuario = async (req, res = response) => {
 
     const { email, password, rol } = req.body;
 
-    if(rol === 'user') {
+    if (rol === 'user') {
 
-    try {
-        let usuario = await Usuario.findOne({ email: email });
+        try {
+            let usuario = await Usuario.findOne({ email: email });
 
-        if (usuario) {
-            return res.status(400).json({
+            if (usuario) {
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'Un usuario existe con ese correo'
+                })
+            }
+
+            usuario = new Usuario(req.body);
+
+            // encriptar contraseña
+            const salt = bcrypt.genSaltSync();
+            usuario.password = bcrypt.hashSync(password, salt);
+
+            await usuario.save();
+
+
+            const token = await generarJWT(usuario.id, usuario.name);
+
+
+
+            res.status(201).json({
+                ok: true,
+                uid: usuario.id,
+                name: usuario.name,
+                token
+            })
+
+        } catch (error) {
+            res.status(500).json({
                 ok: false,
-                msg: 'Un usuario existe con ese correo'
+                msg: 'Por favor hable con el admin'
             })
         }
-
-        usuario = new Usuario(req.body);
-
-        // encriptar contraseña
-        const salt = bcrypt.genSaltSync();
-        usuario.password = bcrypt.hashSync(password, salt);
-
-        await usuario.save();
-
-
-        const token = await generarJWT(usuario.id, usuario.name);
-
-
-        
-        res.status(201).json({
-            ok: true,
-            uid: usuario.id,
-            name: usuario.name,
-            token
-        })
-
-    } catch (error) {
-        res.status(500).json({
+    } else {
+        res.status(403).json({
             ok: false,
-            msg: 'Por favor hable con el admin'
+            msg: 'No tienes permisos para crear usuarios'
         })
     }
-}else{
-    res.status(403).json({
-        ok: false,
-        msg: 'No tienes permisos para crear usuarios'
-    })
-}
 
 };
 
@@ -59,7 +59,6 @@ const loginUsuario = async (req, res = response) => {
     const { email, password } = req.body;
 
     try {
-
         const usuario = await Usuario.findOne({ email: email });
 
         if (!usuario) {
@@ -67,6 +66,18 @@ const loginUsuario = async (req, res = response) => {
                 ok: false,
                 msg: 'Correo o contraseña incorrectos'
             });
+        }
+
+        const {multisesion, fechaFin: fin} = usuario;
+        const now = new Date();
+
+        if(multisesion){
+            if(fin > now.getTime()){
+                return res.status(400).json({
+                    ok: false,
+                    msg: 'El usuario ya inicio sesion',
+                });
+            }
         }
 
         // confirmamr el password
@@ -78,6 +89,13 @@ const loginUsuario = async (req, res = response) => {
                 msg: 'Correo o contraseña incorrectos'
             });
         }
+        
+        const fechafin = now.getTime() + (60 * 60000* 2);
+
+        const newuser = await Usuario.findOneAndUpdate({_id:usuario._id}, {
+            multisesion: true,
+            fechaFin: fechafin
+        });
 
         // generar nuestro JWT
         const token = await generarJWT(usuario.id, usuario.name);
@@ -97,7 +115,27 @@ const loginUsuario = async (req, res = response) => {
     }
 
 };
-// TODO: no sirve revalidar token
+
+const cerrarSesion = async (req, res = response) => {
+    
+    const uid = req.uid;
+
+    const user = await Usuario.findById(uid);
+
+    if (!!user) {
+
+        const newuser = await Usuario.findOneAndUpdate({_id:uid}, {
+            multisesion: false,
+        });
+
+        res.json({
+            ok: true,
+            msg: 'Sesion cerrada'
+        })
+    }
+
+}
+
 const revalidarToken = async (req, res = response) => {
 
     const { uid, name } = req;
@@ -115,7 +153,7 @@ const revalidarToken = async (req, res = response) => {
 
 const crearAdmin = async (req, res = response) => {
 
-    const uid = req.params.uid;
+    const uid = req.body.uid;
 
     const user = await Usuario.findById(uid);
 
@@ -124,9 +162,21 @@ const crearAdmin = async (req, res = response) => {
 
             try {
 
-                const usuario = new Usuario(req.body);
+                const { name, rol, password, email } = req.body;
 
-                usuario.role = 'admin';
+                let usuario = new Usuario({
+                    name,
+                    rol,
+                    email
+                });
+
+                usuario.rol = 'admin';
+
+                // encriptar contraseña
+                const salt = bcrypt.genSaltSync();
+                usuario.password = bcrypt.hashSync(password, salt);
+
+                console.log(usuario);
 
                 await usuario.save();
 
@@ -156,5 +206,6 @@ module.exports = {
     crearUsuario,
     loginUsuario,
     revalidarToken,
-    crearAdmin
+    crearAdmin,
+    cerrarSesion
 }

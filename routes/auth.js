@@ -6,7 +6,7 @@
 const { Router, response } = require('express');
 const { check } = require('express-validator');
 const { validarCampos } = require('../middlewares/validar-campos');
-const { crearUsuario, loginUsuario, revalidarToken, crearAdmin } = require('../controllers/auth');
+const { crearUsuario, loginUsuario, revalidarToken, crearAdmin, cerrarSesion } = require('../controllers/auth');
 const { validarJWT } = require('../middlewares/validar-jwt');
 const { isRole } = require('../helpers/isRole');
 
@@ -35,6 +35,8 @@ router.post(
 router.get('/renew', validarJWT, revalidarToken);
 
 router.use(validarJWT);
+
+router.get('/logout', cerrarSesion);
 
 router.post(
     '/newAdmin',

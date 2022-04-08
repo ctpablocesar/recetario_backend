@@ -18,6 +18,15 @@ const UsuarioSchema = Schema({
     password: {
         type: String,
         required: true
+    },
+    multisesion: {
+        type: Boolean,
+        default: false
+    },
+    fechaFin: {
+        type: Number,
+        required: false,
+        default: null
     }
 
 })
